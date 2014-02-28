@@ -500,8 +500,10 @@ class Runner {
 
 		// Handle --url parameter
 		$url = self::guess_url( $this->config );
-		if ( $url )
+		if ( $url ) {
 			\WP_CLI::set_url( $url );
+
+		} else WP_CLI::line('nope');
 
 		$this->do_early_invoke( 'before_wp_load' );
 
@@ -560,6 +562,7 @@ class Runner {
 		if ( $this->cmd_starts_with( array( 'plugin' ) ) ) {
 			$GLOBALS['pagenow'] = 'plugins.php';
 		}
+
 	}
 
 	private static function fake_current_site_blog( $url_parts ) {
@@ -594,6 +597,13 @@ class Runner {
 
 	public function after_wp_load() {
 		add_filter( 'filesystem_method', function() { return 'direct'; }, 99 );
+
+		if ( is_multisite() ) {
+			if ( isset( $_SERVER['HTTP_HOST'] ) && $_SERVER['HTTP_HOST'] != get_option( 'siteurl' ) ) {
+				WP_CLI::error( "Invalid URL." );
+			}
+		}
+
 
 		// Handle --user parameter
 		self::set_user( $this->config );
